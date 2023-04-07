@@ -120,22 +120,34 @@ class DocumentController extends Controller
         $data = $request->all();
         $data['created_by'] = Auth::id();
         $data['status'] = config('constants.STATUS.PENDING');
-
-        $this->authorize('store', [Document::class, $data['tags']]);
-
-        $document = $this->documentRepository->createWithTags($data);
-        Flash::success(ucfirst(config('settings.document_label_singular')) . " Saved Successfully");
-        $document->newActivity(ucfirst(config('settings.document_label_singular')) . " Created");
-
-        //create permission for new document
-        foreach (config('constants.DOCUMENT_LEVEL_PERMISSIONS') as $perm_key => $perm) {
-            Permission::create(['name' => $perm_key . $document->id]);
+        try {
+            DB::beginTransaction();
+            $this->authorize('store', [Document::class, $data['tags']]);
+            $get = DB::table('custom_fields')->select('*')->where('id_user', $data['created_by'])->first();
+            if (!empty($get)) {
+                DB::table('custom_fields')->where('id_user', $data['created_by'])->update(['jml_pengajuan' => $get->jml_pengajuan + 1]);
+            }else {
+                $get_user = DB::table('users')->select('*')->where('id', $data['created_by'])->first();
+                DB::table('custom_fields')->insert(['nama_desa' => $get_user->name ,'jml_pengajuan' => $get_user->jml_pengajuan + 1, 'id_user' => $data['created_by']]);
+            }
+            $document = $this->documentRepository->createWithTags($data);
+            Flash::success(ucfirst(config('settings.document_label_singular')) . " Saved Successfully");
+            $document->newActivity(ucfirst(config('settings.document_label_singular')) . " Created");
+    
+            //create permission for new document
+            foreach (config('constants.DOCUMENT_LEVEL_PERMISSIONS') as $perm_key => $perm) {
+                Permission::create(['name' => $perm_key . $document->id]);
+            }
+    
+            if ($request->has('savnup')) {
+                return redirect()->route('documents.files.create', $document->id);
+            }
+            DB::commit();
+            return redirect()->route('documents.index');
+        } catch (\Throwable $th) {
+            //throw $th;
         }
-
-        if ($request->has('savnup')) {
-            return redirect()->route('documents.files.create', $document->id);
-        }
-        return redirect()->route('documents.index');
+       
     }
 
     /**
@@ -252,9 +264,23 @@ class DocumentController extends Controller
         }
         $msg = "";
         if ($action == 'approve') {
+            $get = DB::table('custom_fields')->select('*')->where('id_user', $document['created_by'])->first();
+            if (!empty($get)) {
+                DB::table('custom_fields')->where('id_user', $document['created_by'])->update(['diterima' => $get->diterima + 1]);
+            }else {
+                $get_user = DB::table('users')->select('*')->where('id', $document['created_by'])->first();
+                DB::table('custom_fields')->insert(['nama_desa' => $get_user->name ,'jml_pengajuan' => $get_user->jml_pengajuan + 1, 'id_user' => $data['created_by']]);
+            }
             $this->documentRepository->approveDoc($document);
             $msg = "Approved";
         } elseif ($action == 'reject') {
+            $get = DB::table('custom_fields')->select('*')->where('id_user', $document['created_by'])->first();
+            if (!empty($get)) {
+                DB::table('custom_fields')->where('id_user', $document['created_by'])->update(['ditolak' => $get->ditolak + 1]);
+            }else {
+                $get_user = DB::table('users')->select('*')->where('id', $document['created_by'])->first();
+                DB::table('custom_fields')->insert(['nama_desa' => $get_user->name ,'jml_pengajuan' => $get_user->jml_pengajuan + 1, 'id_user' => $data['created_by']]);
+            }
             $this->documentRepository->rejectDoc($document, $comment);
             $msg = "Rejected";
         } else {

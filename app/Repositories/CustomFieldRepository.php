@@ -17,9 +17,10 @@ class CustomFieldRepository extends BaseRepository
      * @var array
      */
     protected $fieldSearchable = [
-        'model_type',
-        'name',
-        'validation'
+        'nama_desa',
+        'jml_pengajuan',
+        'diterima',
+        'ditolak'
     ];
 
     /**
@@ -43,7 +44,7 @@ class CustomFieldRepository extends BaseRepository
     public function getForModel($model)
     {
         return $this->allQuery()
-            ->where('model_type',$model)
+            ->where('nama_desa',$model)
             ->get();
     }
 }

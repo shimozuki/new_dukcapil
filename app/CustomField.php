@@ -11,9 +11,9 @@ use Eloquent as Model;
  * @package App
  * @version November 11, 2019, 5:04 pm IST
  * @property int $id
- * @property string $model_type
- * @property string $name
- * @property string|null $validation
+ * @property string $nama_desa
+ * @property string $jml_pengajuan
+ * @property string|null $ditolak
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @method static \Illuminate\Database\Eloquent\Builder|\App\CustomField newModelQuery()
@@ -36,10 +36,10 @@ class CustomField extends Model
 
 
     public $fillable = [
-        'model_type',
-        'name',
-        'validation',
-        'suggestions'
+        'nama_desa',
+        'jml_pengajuan',
+        'diterima',
+        'ditolak'
     ];
 
     /**
@@ -49,10 +49,10 @@ class CustomField extends Model
      */
     protected $casts = [
         'id' => 'integer',
-        'model_type' => 'string',
-        'name' => 'string',
-        'validation' => 'string',
-        'suggestions' => 'array'
+        'nama_desa' => 'string',
+        'jml_pengajuan' => 'string',
+        'diterima' => 'string',
+        'ditolak' => 'string'
     ];
 
     /**
@@ -61,16 +61,16 @@ class CustomField extends Model
      * @var array
      */
     public static $rules = [
-        'model_type' => 'required',
-        'name' => 'required',
-        'validation' => 'nullable',
-        'suggestions' => 'nullable'
+        'nama_desa' => 'required',
+        'jml_pengajuan' => 'nullable',
+        'diterima' => 'nullable',
+        'ditolak' => 'nullable'
     ];
 
     protected static function boot()
     {
         parent::boot();
-        self::$rules['validation'] = ['nullable', new ValidationRuleSyntaxChecker()];
+        self::$rules['diterima'] = ['nullable', new ValidationRuleSyntaxChecker()];
     }
 
 

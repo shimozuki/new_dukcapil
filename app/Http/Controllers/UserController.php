@@ -8,6 +8,7 @@ use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Repositories\PermissionRepository;
 use App\Repositories\UserRepository;
+use Illuminate\Support\Facades\DB;
 use App\Tag;
 use App\User;
 use Flash;
@@ -21,9 +22,10 @@ class UserController extends AppBaseController
     /** @var PermissionRepository */
     private $permissionRepository;
 
-    public function __construct(UserRepository $userRepo,
-                                PermissionRepository $permissionRepository)
-    {
+    public function __construct(
+        UserRepository $userRepo,
+        PermissionRepository $permissionRepository
+    ) {
         $this->userRepository = $userRepo;
         $this->permissionRepository = $permissionRepository;
     }
@@ -67,16 +69,32 @@ class UserController extends AppBaseController
         $input['password'] = bcrypt($input['password']);
 
         /** @var User $user */
-        $user = $this->userRepository->create($input);
+        try {
+            DB::beginTransaction();
+            $user = $this->userRepository->create($input);
+            $insertedId = $user->id;
+            // DB::table('custom_fields')->insert(['nama_desa' => $input['name']]);
+            // DB::enableQueryLog();
+            DB::table('custom_fields')->insert(['nama_desa' => $input['name'], 'jml_pengajuan' => 0, 'diterima' => 0, 'ditolak' => 0, 'id_user' => $insertedId]);
+            // dd(\DB::getQueryLog());
+            //give selected permission to user
+            if (\Auth::user()->can('user manage permission')) {
+                $this->permissionRepository->setPermissionsForUser($user, $this->mapInputToPermissions($input));
+            }
+            //end permission
+            DB::commit();
+            Flash::success('User saved successfully.');
 
-        //give selected permission to user
-        if (\Auth::user()->can('user manage permission')) {
-            $this->permissionRepository->setPermissionsForUser($user, $this->mapInputToPermissions($input));
+            return redirect(route('users.index'));
+            
+        } catch (\Exception $exp) {
+            DB::rollBack();
+            return response([
+                'message' => 'Gagal Insert',
+                'data' => $input,
+                'status' => 'failed'
+            ], 400);
         }
-        //end permission
-        Flash::success('User saved successfully.');
-
-        return redirect(route('users.index'));
     }
 
     private function mapInputToPermissions($input)
@@ -121,7 +139,7 @@ class UserController extends AppBaseController
             $globalPermissions = $this->permissionRepository->getGlobalPermissionsModelWiseForUser($user);
         }
 
-        return view('users.show', compact('user', 'tags', 'documents','globalPermissions'));
+        return view('users.show', compact('user', 'tags', 'documents', 'globalPermissions'));
     }
 
     /**
@@ -179,13 +197,13 @@ class UserController extends AppBaseController
         //give selected permission to users
         if (\Auth::user()->can('user manage permission')) {
             $permissions = $this->mapInputToPermissions($data);
-            $docsPermissions = [];//also allocate doc level permissions.
+            $docsPermissions = []; //also allocate doc level permissions.
             foreach (groupDocumentsPermissions($user->getAllPermissions()) as $perm) {
                 foreach ($perm['permissions'] as $perm_val) {
-                    $docsPermissions[] = $perm_val." document ".$perm['doc_id'];
+                    $docsPermissions[] = $perm_val . " document " . $perm['doc_id'];
                 }
             }
-            $user->syncPermissions(array_merge($permissions,$docsPermissions));
+            $user->syncPermissions(array_merge($permissions, $docsPermissions));
         }
         //end permission
         Flash::success('User updated successfully.');

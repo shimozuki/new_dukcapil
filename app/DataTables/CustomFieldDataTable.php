@@ -19,8 +19,8 @@ class CustomFieldDataTable extends DataTable
         $dataTable = new EloquentDataTable($query);
 
         return $dataTable->addColumn('action', 'custom_fields.datatables_actions')
-            ->editColumn('model_type',function (CustomField $customField){
-                return config('settings_array.model_types_plural')[$customField->model_type];
+            ->editColumn('nama_desa',function (CustomField $customField){
+                return [$customField->nama_desa];
             });
     }
 
@@ -68,9 +68,10 @@ class CustomFieldDataTable extends DataTable
     {
         return [
             'id',
-            'model_type',
-            'name',
-            'validation'
+            'nama_desa',
+            'jml_pengajuan',
+            'diterima',
+            'ditolak'
         ];
     }
 

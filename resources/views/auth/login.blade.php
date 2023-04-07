@@ -38,6 +38,7 @@
 <body class="hold-transition login-page">
 <div class="login-box">
     <div class="login-logo">
+    <img src="{{ asset('logo.png')}}" alt="logo" height="35%" width="35%">
     <p>Sistem Informasi Pengajuan Layanan Administrasi Disdukcapil Sumbawa</p>
     </div>
     
