@@ -5,6 +5,8 @@ namespace App\DataTables;
 use App\CustomField;
 use Yajra\DataTables\Services\DataTable;
 use Yajra\DataTables\EloquentDataTable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CustomFieldDataTable extends DataTable
 {
@@ -14,14 +16,23 @@ class CustomFieldDataTable extends DataTable
      * @param mixed $query Results from query() method.
      * @return \Yajra\DataTables\DataTableAbstract
      */
-    public function dataTable($query)
+    public function dataTable($query, CustomField $model)
     {
-        $dataTable = new EloquentDataTable($query);
+        $user = Auth::id();
 
-        return $dataTable->addColumn('action', 'custom_fields.datatables_actions')
-            ->editColumn('nama_desa',function (CustomField $customField){
-                return [$customField->nama_desa];
-            });
+        if ($user == 1) {
+            $dataTable = new EloquentDataTable($query);
+            return $dataTable
+                ->editColumn('nama_desa',function (CustomField $customField){
+                    return [$customField->nama_desa];
+                });
+        }else{
+            $dataTable = new EloquentDataTable($query->where('id_user', $user));
+            return $dataTable
+                ->editColumn('nama_desa',function (CustomField $customField){
+                    return [$customField->nama_desa];
+                });
+        }
     }
 
     /**
@@ -34,6 +45,7 @@ class CustomFieldDataTable extends DataTable
     {
         return $model->newQuery();
     }
+
 
     /**
      * Optional method if you want to use html builder.

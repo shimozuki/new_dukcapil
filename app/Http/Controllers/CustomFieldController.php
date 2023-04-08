@@ -29,7 +29,7 @@ class CustomFieldController extends AppBaseController
      */
     public function index(CustomFieldDataTable $customFieldDataTable)
     {
-        $this->isSuperAdmin();
+        // $this->isSuperAdmin();
         return $customFieldDataTable->render('custom_fields.index');
     }
 

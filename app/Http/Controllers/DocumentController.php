@@ -128,12 +128,14 @@ class DocumentController extends Controller
                 DB::table('custom_fields')->where('id_user', $data['created_by'])->update(['jml_pengajuan' => $get->jml_pengajuan + 1]);
             }else {
                 $get_user = DB::table('users')->select('*')->where('id', $data['created_by'])->first();
-                DB::table('custom_fields')->insert(['nama_desa' => $get_user->name ,'jml_pengajuan' => $get_user->jml_pengajuan + 1, 'id_user' => $data['created_by']]);
+                print_r($get_user->name);
+                DB::table('custom_fields')->insert(['nama_desa' => $get_user->name , 'jml_pengajuan' => 1, 'diterima' => 0, 'ditolak' => 0,  'id_user' => $data['created_by']]);
             }
             $document = $this->documentRepository->createWithTags($data);
+            DB::commit();
+
             Flash::success(ucfirst(config('settings.document_label_singular')) . " Saved Successfully");
             $document->newActivity(ucfirst(config('settings.document_label_singular')) . " Created");
-    
             //create permission for new document
             foreach (config('constants.DOCUMENT_LEVEL_PERMISSIONS') as $perm_key => $perm) {
                 Permission::create(['name' => $perm_key . $document->id]);
@@ -142,10 +144,15 @@ class DocumentController extends Controller
             if ($request->has('savnup')) {
                 return redirect()->route('documents.files.create', $document->id);
             }
-            DB::commit();
             return redirect()->route('documents.index');
-        } catch (\Throwable $th) {
-            //throw $th;
+        } catch (\Exception $get) {
+            // DB::rollBack();
+            $get = DB::table('custom_fields')->select('*')->where('id_user', $data['created_by'])->first();
+            return response([
+                'message' => 'error, filed to insert',
+                'status' => 'failed',
+                'data' => $get
+            ], 400);
         }
        
     }

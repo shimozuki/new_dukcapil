@@ -16,9 +16,6 @@
     <a href="{!! route('documents.index') !!}"><i class="fa fa-folder"></i><span>{{ucfirst(config('settings.document_label_plural'))}}</span></a>
 </li>
 @endcan
-@if(auth()->user()->is_super_admin)
-
 <li class="{{ Request::is('admin/advanced/custom-fields*') ? 'active' : '' }}">
     <a href="{!! route('customFields.index') !!}"><i class="fa fa-file-text-o"></i><span>Laporan</span></a>
 </li>
-@endif
